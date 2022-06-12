@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
 import { Product, Stock } from '../types';
@@ -28,6 +28,20 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return storageCart ? JSON.parse(storageCart) : [];
   });
 
+  const cartUseRef = useRef<Product[]>();
+
+  useEffect(() => {
+    cartUseRef.current = cart;
+  });
+
+  const previousCart = cartUseRef.current ?? cart;
+
+  useEffect(() => {
+    if (previousCart !== cart) {
+      localStorage.setItem("@RocketShoes:cart", JSON.stringify(cart));
+    }
+  }, [cart, previousCart]);
+
   const addProduct = async (productId: number) => {
     try {
       let product = cart.find(product => product.id === productId);
@@ -44,7 +58,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       if(product) {
         product.amount = amountNeeded;
         setCart([...cart]);
-        localStorage.setItem("@RocketShoes:cart", JSON.stringify(cart));
         return;
       }
 
@@ -56,9 +69,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       }
 
       product.amount = amountNeeded;
-
       setCart([...cart, product]);
-      localStorage.setItem("@RocketShoes:cart", JSON.stringify(cart));
     } catch {
       toast.error("Erro na adição do produto");
     }
@@ -71,7 +82,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         throw new Error("Product not found in the cart");
       }
       setCart(cart.filter(product => product.id !== productId));
-      localStorage.setItem("@RocketShoes:cart", JSON.stringify(cart));
     } catch {
       toast.error("Erro na remoção do produto");
     }
@@ -100,7 +110,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
       product.amount = amount;
       setCart([...cart]);
-      localStorage.setItem("@RocketShoes:cart", JSON.stringify(cart));
     } catch {
       toast.error("Erro na alteração de quantidade do produto");
     }
